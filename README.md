@@ -28,7 +28,7 @@ Google Gemini APIで利用可能なモデル一覧を毎日自動取得・追跡
 - **実行タイミング**：毎日 UTC 0:00（日本時間 9:00）
 - **手動実行**：Actionsタブから `workflow_dispatch` で任意実行可能
 - **変更検知**：`models.json` に差分がある場合のみコミット・プッシュ
-- **Discord通知**：モデルの追加・変更があった場合のみ通知
+- **Discord通知**：モデルの追加・変更があった場合に変更されたモデル名を含む通知を送信
 
 ## ファイル構成
 
@@ -77,7 +77,7 @@ Register the following in your repository's **Settings** → **Secrets and varia
 - **Schedule**: Daily at UTC 0:00 (JST 9:00)
 - **Manual trigger**: Can be run manually via `workflow_dispatch` in the Actions tab
 - **Change detection**: Only commits and pushes when `models.json` has changes
-- **Discord notification**: Only notifies when models are added or updated
+- **Discord notification**: Sends a notification including the changed model names when models are added or updated
 
 ## File Structure
 
