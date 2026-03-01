@@ -1,0 +1,45 @@
+name: Update Gemini Models List
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 毎日午前0時（UTC）
+  workflow_dispatch:
+
+jobs:
+  update-models:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Gemini Models List
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          curl -s -X GET "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
+            | jq . > models.json
+
+      - name: Commit changes if updated
+        id: commit_changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          git add models.json
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "Update Gemini models list [$(date +'%Y-%m-%d')]"
+            git push
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Discord on model change
+        if: steps.commit_changes.outputs.has_changes == 'true'
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_USERNAME: "Gemini Model Watcher"
+          DISCORD_AVATAR: "https://i.imgur.com/ロボットアイコンURL.png" # 任意で変更
+          DISCORD_EMBEDS: '[{"title":"Geminiモデル更新！","description":"新モデル追加/変更検知\n日時: $(date +\"%Y-%m-%d %H:%M\")\n詳細: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}","color":65280}]'
