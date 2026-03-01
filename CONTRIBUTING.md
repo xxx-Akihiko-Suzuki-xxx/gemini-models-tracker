@@ -7,6 +7,7 @@
 バグや改善提案は [Issues](https://github.com/xxx-Akihiko-Suzuki-xxx/gemini-models-tracker/issues) から報告してください。
 
 報告の際は以下を含めてください：
+
 - 問題の概要
 - 再現手順（バグの場合）
 - 期待する動作
@@ -30,11 +31,11 @@
 
 ### ブランチ命名規則
 
-| 種類 | 例 |
-|------|----|
-| バグ修正 | `fix/discord-notification` |
-| 機能追加 | `feat/add-model-filter` |
-| ドキュメント | `docs/update-readme` |
+| 種類         | 例                         |
+| ------------ | -------------------------- |
+| バグ修正     | `fix/discord-notification` |
+| 機能追加     | `feat/add-model-filter`    |
+| ドキュメント | `docs/update-readme`       |
 
 ---
 
@@ -45,6 +46,7 @@
 Please report bugs or suggestions via [Issues](https://github.com/xxx-Akihiko-Suzuki-xxx/gemini-models-tracker/issues).
 
 Include the following in your report:
+
 - Summary of the issue
 - Steps to reproduce (for bugs)
 - Expected behavior
@@ -68,8 +70,8 @@ Include the following in your report:
 
 ### Branch Naming Convention
 
-| Type | Example |
-|------|---------|
-| Bug fix | `fix/discord-notification` |
-| New feature | `feat/add-model-filter` |
-| Documentation | `docs/update-readme` |
+| Type          | Example                    |
+| ------------- | -------------------------- |
+| Bug fix       | `fix/discord-notification` |
+| New feature   | `feat/add-model-filter`    |
+| Documentation | `docs/update-readme`       |
