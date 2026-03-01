@@ -40,26 +40,47 @@ jobs:
           if git diff --staged --quiet; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "diff_summary=" >> $GITHUB_OUTPUT
+            echo "new_sha=" >> $GITHUB_OUTPUT
           else
             ADDED=$(git diff --staged models.json \
               | grep '^\+.*"name"' | grep -v '^+++' \
               | sed 's/.*"name": "\(.*\)".*/+ \1/' \
-              | head -10 | tr '\n' '\\n')
+              | head -10)
             REMOVED=$(git diff --staged models.json \
               | grep '^\-.*"name"' | grep -v '^---' \
               | sed 's/.*"name": "\(.*\)".*/- \1/' \
-              | head -10 | tr '\n' '\\n')
-            echo "diff_summary=${ADDED}${REMOVED}" >> $GITHUB_OUTPUT
+              | head -10)
+            echo "diff_summary<<EOF" >> $GITHUB_OUTPUT
+            { [ -n "$ADDED" ] && echo "$ADDED"; [ -n "$REMOVED" ] && echo "$REMOVED"; } >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
 
             git commit -m "Update Gemini models list [$(date +'%Y-%m-%d')]"
             git push
+            NEW_SHA=$(git rev-parse HEAD)
+            echo "new_sha=${NEW_SHA}" >> $GITHUB_OUTPUT
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Notify Discord on model change
         if: steps.commit_changes.outputs.has_changes == 'true'
-        uses: Ilshidur/action-discord@0.3.2
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DISCORD_USERNAME: "Gemini Model Watcher"
-          DISCORD_EMBEDS: '[{"title":"Geminiモデル更新！","description":"変更モデル:\n${{ steps.commit_changes.outputs.diff_summary }}\n\n日時: ${{ steps.commit_changes.outputs.current_date }}\n詳細: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}","color":65280}]'
+          DIFF_SUMMARY: ${{ steps.commit_changes.outputs.diff_summary }}
+          CURRENT_DATE: ${{ steps.commit_changes.outputs.current_date }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.commit_changes.outputs.new_sha }}
+        run: |
+          curl -sSf -X POST \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg summary "$DIFF_SUMMARY" \
+              --arg date "$CURRENT_DATE" \
+              --arg url "$COMMIT_URL" \
+              '{
+                username: "Gemini Model Watcher",
+                embeds: [{
+                  title: "Geminiモデル更新！",
+                  description: ("変更モデル:\n" + $summary + "\n\n日時: " + $date + "\n詳細: " + $url),
+                  color: 65280
+                }]
+              }')" \
+            "$DISCORD_WEBHOOK"
