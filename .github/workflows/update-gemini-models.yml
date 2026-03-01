@@ -62,13 +62,10 @@ jobs:
           fi
 
       - name: Notify Discord on model change
-        # if: steps.commit_changes.outputs.has_changes == 'true'
+        if: steps.commit_changes.outputs.has_changes == 'true'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DIFF_SUMMARY: |
-            + models/gemini-2.5-pro
-            + models/gemini-2.5-flash
-            - models/gemini-1.0-pro
+          DIFF_SUMMARY: ${{ steps.commit_changes.outputs.diff_summary }}
           CURRENT_DATE: ${{ steps.commit_changes.outputs.current_date }}
           COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.commit_changes.outputs.new_sha }}
         run: |
