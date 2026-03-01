@@ -82,7 +82,7 @@ jobs:
                 username: "Gemini Model Watcher",
                 embeds: [{
                   title: "Geminiモデル更新！",
-                  description: ("変更モデル:\n" + $summary + "\n\n日時: " + $date + "\n詳細: " + $url),
+                  description: ("変更モデル:\n```diff\n" + $summary + "```\n日時: " + $date + "\n詳細: " + $url),
                   color: 65280
                 }]
               }')" \
