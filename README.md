@@ -44,3 +44,52 @@ Google Gemini APIで利用可能なモデル一覧を毎日自動取得・追跡
 ## License
 
 MIT
+
+---
+
+# Gemini Models Tracker (English)
+
+A repository that automatically fetches and tracks the list of available models from the Google Gemini API every day.
+
+## Overview
+
+GitHub Actions runs daily at UTC 0:00, fetches the model list from the Gemini API, and commits/pushes if any changes are detected.  
+A Discord notification is sent when models are added or updated.
+
+## Setup
+
+### Required Secrets
+
+Register the following in your repository's **Settings** → **Secrets and variables** → **Actions**.
+
+| Secret Name           | Description                              |
+| --------------------- | ---------------------------------------- |
+| `GEMINI_API_KEY`      | Your Google AI Studio API key            |
+| `DISCORD_WEBHOOK_URL` | Discord Webhook URL for notifications (optional) |
+
+### Getting API Keys
+
+- **Gemini API Key**: Obtain from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **Discord Webhook URL**: Channel Settings → Integrations → Webhooks
+
+## How It Works
+
+- **Schedule**: Daily at UTC 0:00 (JST 9:00)
+- **Manual trigger**: Can be run manually via `workflow_dispatch` in the Actions tab
+- **Change detection**: Only commits and pushes when `models.json` has changes
+- **Discord notification**: Only notifies when models are added or updated
+
+## File Structure
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── update-gemini-models.yml  # GitHub Actions workflow
+├── models.json                        # Fetched model list (auto-updated)
+└── README.md
+```
+
+## License
+
+MIT
