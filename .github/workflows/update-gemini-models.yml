@@ -33,10 +33,24 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
+          CURRENT_DATE=$(date +'%Y-%m-%d %H:%M')
+          echo "current_date=${CURRENT_DATE}" >> $GITHUB_OUTPUT
+
           git add models.json
           if git diff --staged --quiet; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "diff_summary=" >> $GITHUB_OUTPUT
           else
+            ADDED=$(git diff --staged models.json \
+              | grep '^\+.*"name"' | grep -v '^+++' \
+              | sed 's/.*"name": "\(.*\)".*/+ \1/' \
+              | head -10 | tr '\n' '\\n')
+            REMOVED=$(git diff --staged models.json \
+              | grep '^\-.*"name"' | grep -v '^---' \
+              | sed 's/.*"name": "\(.*\)".*/- \1/' \
+              | head -10 | tr '\n' '\\n')
+            echo "diff_summary=${ADDED}${REMOVED}" >> $GITHUB_OUTPUT
+
             git commit -m "Update Gemini models list [$(date +'%Y-%m-%d')]"
             git push
             echo "has_changes=true" >> $GITHUB_OUTPUT
@@ -48,4 +62,4 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_USERNAME: "Gemini Model Watcher"
-          DISCORD_EMBEDS: '[{"title":"Geminiモデル更新！","description":"新モデル追加/変更検知\n日時: $(date +\"%Y-%m-%d %H:%M\")\n詳細: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}","color":65280}]'
+          DISCORD_EMBEDS: '[{"title":"Geminiモデル更新！","description":"変更モデル:\n${{ steps.commit_changes.outputs.diff_summary }}\n\n日時: ${{ steps.commit_changes.outputs.current_date }}\n詳細: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}","color":65280}]'
