@@ -62,9 +62,9 @@ A Discord notification is sent when models are added or updated.
 
 Register the following in your repository's **Settings** → **Secrets and variables** → **Actions**.
 
-| Secret Name           | Description                              |
-| --------------------- | ---------------------------------------- |
-| `GEMINI_API_KEY`      | Your Google AI Studio API key            |
+| Secret Name           | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| `GEMINI_API_KEY`      | Your Google AI Studio API key                    |
 | `DISCORD_WEBHOOK_URL` | Discord Webhook URL for notifications (optional) |
 
 ### Getting API Keys

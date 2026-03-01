@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-models
+  cancel-in-progress: false
+
 jobs:
   update-models:
     runs-on: ubuntu-latest
