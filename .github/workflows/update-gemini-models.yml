@@ -62,7 +62,7 @@ jobs:
           fi
 
       - name: Notify Discord on model change
-        # if: steps.commit_changes.outputs.has_changes == 'true'
+        if: steps.commit_changes.outputs.has_changes == 'true'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DIFF_SUMMARY: ${{ steps.commit_changes.outputs.diff_summary }}
