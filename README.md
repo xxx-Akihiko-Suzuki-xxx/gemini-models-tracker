@@ -29,6 +29,8 @@ Google Gemini APIで利用可能なモデル一覧を毎日自動取得・追跡
 - **手動実行**：Actionsタブから `workflow_dispatch` で任意実行可能
 - **変更検知**：`models.json` に差分がある場合のみコミット・プッシュ
 - **Discord通知**：モデルの追加・変更があった場合に変更されたモデル名を含む通知を送信
+  - `+ models/...`（緑）：新しく追加されたモデル
+  - `- models/...`（赤）：削除されたモデル
 
 ## ファイル構成
 
@@ -78,6 +80,8 @@ Register the following in your repository's **Settings** → **Secrets and varia
 - **Manual trigger**: Can be run manually via `workflow_dispatch` in the Actions tab
 - **Change detection**: Only commits and pushes when `models.json` has changes
 - **Discord notification**: Sends a notification including the changed model names when models are added or updated
+  - `+ models/...` (green): Newly added models
+  - `- models/...` (red): Removed models
 
 ## File Structure
 
