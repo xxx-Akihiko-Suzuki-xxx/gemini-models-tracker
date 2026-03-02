@@ -49,25 +49,46 @@ Google Gemini APIで利用可能なモデル一覧を毎日自動取得・追跡
 
 #### 2. cron-job.org の設定
 
-| 項目 | 値 |
-|---|---|
-| URL | `https://api.github.com/repos/{owner}/{repo}/actions/workflows/update-gemini-models.yml/dispatches` |
-| Method | `POST` |
-| Headers | `Authorization: Bearer {YOUR_TOKEN}` |
-| Headers | `Accept: application/vnd.github+v3+json` |
-| Headers | `Content-Type: application/json` |
-| Body | `{"ref":"main"}` |
-| Schedule | 任意の時刻（例：毎日 JST 9:00） |
+| 項目     | 値                                                                                                  |
+| -------- | --------------------------------------------------------------------------------------------------- |
+| URL      | `https://api.github.com/repos/{owner}/{repo}/actions/workflows/update-gemini-models.yml/dispatches` |
+| Method   | `POST`                                                                                              |
+| Headers  | `Authorization: Bearer {YOUR_TOKEN}`                                                                |
+| Headers  | `Accept: application/vnd.github+v3+json`                                                            |
+| Headers  | `Content-Type: application/json`                                                                    |
+| Body     | `{"ref":"main"}`                                                                                    |
+| Schedule | 任意の時刻（例：毎日 JST 9:00）                                                                     |
 
 > レスポンスが `204 No Content` であれば成功です。
+
+## CI / 依存関係の管理
+
+### CI（継続的インテグレーション）
+
+PRが作成されると `.github/workflows/ci.yml` が自動実行されます。
+
+| Job                       | 内容                                                            | 実行タイミング                |
+| ------------------------- | --------------------------------------------------------------- | ----------------------------- |
+| **Job 1: ロジックテスト** | diffロジック・JSONペイロードをフィクスチャで検証（Secrets不要） | PR作成時・自動実行            |
+| **Job 2: APIテスト**      | Gemini API接続・JSONバリデーション・Discord通知の実送信         | 手動実行（workflow_dispatch） |
+
+> DependabotのPRが来た場合、Job 1は自動実行されます。Job 2はActionsタブの「Run workflow」から手動実行してください。
+
+### Dependabot
+
+`.github/dependabot.yml` により、GitHub Actionsの依存アクション（例：`actions/checkout`）のバージョンアップが**毎週自動でPR作成**されます。
+
+- CIが通ることを確認してからマージしてください
 
 ## ファイル構成
 
 ```
 .
 ├── .github/
+│   ├── dependabot.yml                 # Dependabot設定（依存関係の自動更新）
 │   └── workflows/
-│       └── update-gemini-models.yml  # GitHub Actionsワークフロー
+│       ├── update-gemini-models.yml   # GitHub Actionsワークフロー（本番）
+│       └── ci.yml                     # CIワークフロー（PR検証）
 ├── models.json                        # 取得したモデル一覧（自動更新）
 └── README.md
 ```
@@ -129,25 +150,46 @@ You can use external services like [cron-job.org](https://cron-job.org) to trigg
 
 #### 2. Configure cron-job.org
 
-| Setting | Value |
-|---|---|
-| URL | `https://api.github.com/repos/{owner}/{repo}/actions/workflows/update-gemini-models.yml/dispatches` |
-| Method | `POST` |
-| Headers | `Authorization: Bearer {YOUR_TOKEN}` |
-| Headers | `Accept: application/vnd.github+v3+json` |
-| Headers | `Content-Type: application/json` |
-| Body | `{"ref":"main"}` |
-| Schedule | Any time (e.g., daily at 9:00 AM JST) |
+| Setting  | Value                                                                                               |
+| -------- | --------------------------------------------------------------------------------------------------- |
+| URL      | `https://api.github.com/repos/{owner}/{repo}/actions/workflows/update-gemini-models.yml/dispatches` |
+| Method   | `POST`                                                                                              |
+| Headers  | `Authorization: Bearer {YOUR_TOKEN}`                                                                |
+| Headers  | `Accept: application/vnd.github+v3+json`                                                            |
+| Headers  | `Content-Type: application/json`                                                                    |
+| Body     | `{"ref":"main"}`                                                                                    |
+| Schedule | Any time (e.g., daily at 9:00 AM JST)                                                               |
 
 > A `204 No Content` response indicates success.
+
+## CI / Dependency Management
+
+### CI (Continuous Integration)
+
+When a PR is opened, `.github/workflows/ci.yml` runs automatically.
+
+| Job                   | Description                                                                   | Trigger                    |
+| --------------------- | ----------------------------------------------------------------------------- | -------------------------- |
+| **Job 1: Logic Test** | Validates diff logic and Discord payload using fixtures (no Secrets required) | Automatic on PR            |
+| **Job 2: API Test**   | Gemini API connection, JSON validation, and actual Discord notification send  | Manual (workflow_dispatch) |
+
+> For Dependabot PRs, Job 1 runs automatically. Run Job 2 manually from the Actions tab → "Run workflow" before merging.
+
+### Dependabot
+
+`.github/dependabot.yml` automatically creates weekly PRs to update GitHub Actions dependencies (e.g., `actions/checkout`).
+
+- Always confirm CI passes before merging
 
 ## File Structure
 
 ```
 .
 ├── .github/
+│   ├── dependabot.yml                 # Dependabot config (auto dependency updates)
 │   └── workflows/
-│       └── update-gemini-models.yml  # GitHub Actions workflow
+│       ├── update-gemini-models.yml   # GitHub Actions workflow (production)
+│       └── ci.yml                     # CI workflow (PR validation)
 ├── models.json                        # Fetched model list (auto-updated)
 └── README.md
 ```
