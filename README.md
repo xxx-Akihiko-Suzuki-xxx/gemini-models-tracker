@@ -32,6 +32,35 @@ Google Gemini APIで利用可能なモデル一覧を毎日自動取得・追跡
   - `+ models/...`（緑）：新しく追加されたモデル
   - `- models/...`（赤）：削除されたモデル
 
+### 注意事項
+
+- GitHub Actionsのスケジュール実行（`schedule`）は遅延が発生する場合があります
+- より正確な定時実行が必要な場合は、外部cronサービスから `workflow_dispatch` をトリガーする方法もあります
+
+### 外部cronサービスを使う方法（任意）
+
+[cron-job.org](https://cron-job.org) 等の外部サービスからワークフローを定時実行できます。
+
+#### 1. GitHub Personal Access Token を作成
+
+1. [GitHub Settings → Fine-grained Tokens](https://github.com/settings/tokens?type=beta) にアクセス
+2. 対象リポジトリを選択し、**Actions** の権限を **Read and write** に設定
+3. トークンを生成してコピー
+
+#### 2. cron-job.org の設定
+
+| 項目 | 値 |
+|---|---|
+| URL | `https://api.github.com/repos/{owner}/{repo}/actions/workflows/update-gemini-models.yml/dispatches` |
+| Method | `POST` |
+| Headers | `Authorization: Bearer {YOUR_TOKEN}` |
+| Headers | `Accept: application/vnd.github+v3+json` |
+| Headers | `Content-Type: application/json` |
+| Body | `{"ref":"main"}` |
+| Schedule | 任意の時刻（例：毎日 JST 9:00） |
+
+> レスポンスが `204 No Content` であれば成功です。
+
 ## ファイル構成
 
 ```
@@ -82,6 +111,35 @@ Register the following in your repository's **Settings** → **Secrets and varia
 - **Discord notification**: Sends a notification including the changed model names when models are added or updated
   - `+ models/...` (green): Newly added models
   - `- models/...` (red): Removed models
+
+### Notes
+
+- GitHub Actions schedule (`schedule`) may have delays
+- For more precise scheduling, you can trigger `workflow_dispatch` from an external cron service
+
+### Using an External Cron Service (Optional)
+
+You can use external services like [cron-job.org](https://cron-job.org) to trigger the workflow on a precise schedule.
+
+#### 1. Create a GitHub Personal Access Token
+
+1. Go to [GitHub Settings → Fine-grained Tokens](https://github.com/settings/tokens?type=beta)
+2. Select the target repository and set **Actions** permission to **Read and write**
+3. Generate and copy the token
+
+#### 2. Configure cron-job.org
+
+| Setting | Value |
+|---|---|
+| URL | `https://api.github.com/repos/{owner}/{repo}/actions/workflows/update-gemini-models.yml/dispatches` |
+| Method | `POST` |
+| Headers | `Authorization: Bearer {YOUR_TOKEN}` |
+| Headers | `Accept: application/vnd.github+v3+json` |
+| Headers | `Content-Type: application/json` |
+| Body | `{"ref":"main"}` |
+| Schedule | Any time (e.g., daily at 9:00 AM JST) |
+
+> A `204 No Content` response indicates success.
 
 ## File Structure
 
