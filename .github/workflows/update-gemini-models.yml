@@ -2,7 +2,7 @@ name: Update Gemini Models List
 
 on:
   schedule:
-    - cron: "35 0 * * *" # テスト用：UTC 0:35（JST 9:35）
+    - cron: "0 1 * * *" # テスト用：UTC 1:00（JST 10:00）
   workflow_dispatch:
 
 permissions:
