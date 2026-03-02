@@ -1,0 +1,181 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ============================================================
+  # Job 1: ロジックテスト（secretなし・誰でも動く）
+  # ============================================================
+  test-logic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # Step 1: diffロジックのテスト（フィクスチャ使用）
+      # ----------------------------------------------------------
+      - name: Test diff extraction logic
+        run: |
+          # フィクスチャ: 「前回取得済み」の状態を作ってcommit
+          cat <<'EOF' > models.json
+          {
+            "models": [
+              { "name": "models/gemini-old-model", "baseModelId": "gemini-old-model", "version": "001" },
+              { "name": "models/gemini-stable",    "baseModelId": "gemini-stable",    "version": "001" }
+            ],
+            "nextPageToken": ""
+          }
+          EOF
+
+          git config user.email "ci@test"
+          git config user.name "CI"
+          git add models.json
+          git commit -m "fixture: previous models state" --quiet
+
+          # フィクスチャ: 「今回取得した」新しい状態を上書き
+          cat <<'EOF' > models.json
+          {
+            "models": [
+              { "name": "models/gemini-new-model", "baseModelId": "gemini-new-model", "version": "001" },
+              { "name": "models/gemini-stable",    "baseModelId": "gemini-stable",    "version": "001" }
+            ],
+            "nextPageToken": ""
+          }
+          EOF
+
+          # diffロジック本体（本番スクリプトと同じ処理）
+          DIFF=$(git diff models.json | grep '^[+-].*"name"' || true)
+
+          if [ -z "$DIFF" ]; then
+            echo "❌ diff extraction failed: expected changes not detected"
+            exit 1
+          fi
+
+          echo "✅ Diff extraction passed:"
+          echo "$DIFF"
+
+          # 期待値チェック
+          echo "$DIFF" | grep -q 'gemini-old-model' || { echo "❌ removed model not detected"; exit 1; }
+          echo "$DIFF" | grep -q 'gemini-new-model' || { echo "❌ added model not detected"; exit 1; }
+          echo "✅ Added/removed model detection confirmed"
+
+      # ----------------------------------------------------------
+      # Step 2: Discord通知ペイロードのdry-run
+      # ----------------------------------------------------------
+      - name: Test Discord notification payload (dry-run)
+        run: |
+          jq -n \
+            --arg summary "+ models/gemini-new-model\n- models/gemini-old-model" \
+            --arg date "$(date +'%Y-%m-%d %H:%M JST')" \
+            --arg url "https://github.com/example/repo/commit/abc123" \
+            '{
+              username: "Gemini Model Watcher",
+              embeds: [{
+                title: "🔔 Geminiモデル更新を検知しました",
+                description: ("変更モデル:\n```diff\n" + $summary + "```\n日時: " + $date + "\n詳細: " + $url),
+                color: 3447003
+              }]
+            }' > test_payload.json
+
+          # JSONとして正しいか検証
+          jq empty test_payload.json || { echo "❌ Invalid JSON payload"; exit 1; }
+
+          echo "✅ Discord payload validation passed"
+          cat test_payload.json
+
+  # ============================================================
+  # Job 2: APIテスト（secretあり・オーナーのみ実行される）
+  # ============================================================
+  test-api:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # Step 1: Gemini API接続テスト
+      # ----------------------------------------------------------
+      - name: Test Gemini API connection
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "⚠️ GEMINI_API_KEY not set, skipping"
+            exit 0
+          fi
+
+          # -f: HTTPエラー(4xx/5xx)でexit 1
+          curl -sf \
+            "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
+            -o models.json || { echo "❌ API request failed (HTTP error)"; exit 1; }
+
+          echo "✅ API request succeeded"
+
+      # ----------------------------------------------------------
+      # Step 2: JSONバリデーション
+      # ----------------------------------------------------------
+      - name: Validate JSON output
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "⚠️ Skipping (no API key)"
+            exit 0
+          fi
+
+          # 空ファイルチェック
+          if [ ! -s models.json ]; then
+            echo "❌ models.json is empty"
+            exit 1
+          fi
+
+          # エラーレスポンス検知
+          if jq -e '.error' models.json > /dev/null 2>&1; then
+            echo "❌ API returned error:"
+            jq '.error' models.json
+            exit 1
+          fi
+
+          # modelsが1件以上あることを確認
+          COUNT=$(jq '.models | length' models.json)
+          if [ "$COUNT" -lt 1 ]; then
+            echo "❌ models array is empty"
+            exit 1
+          fi
+
+          echo "✅ JSON validation passed (${COUNT} models found)"
+
+      # ----------------------------------------------------------
+      # Step 3: Discord通知テスト（実送信）
+      # ----------------------------------------------------------
+      - name: Send test notification to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL not set, skipping"
+            exit 0
+          fi
+
+          curl -sSf -X POST \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg date "$(date +'%Y-%m-%d %H:%M JST')" \
+              --arg url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+              '{
+                username: "Gemini Model Watcher (CI Test)",
+                embeds: [{
+                  title: "🧪 CIテスト: 通知が届きました！",
+                  description: ("日時: " + $date + "\nワークフロー: " + $url),
+                  color: 3447003,
+                  footer: { text: "これはCIテストメッセージです。本番通知ではありません。" }
+                }]
+              }')" \
+            "$DISCORD_WEBHOOK" || echo "⚠️ Notification send failed (check webhook URL)"
