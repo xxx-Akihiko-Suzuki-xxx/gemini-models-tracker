@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ----------------------------------------------------------
       # Step 1: diffロジックのテスト（フィクスチャ使用）
@@ -97,7 +97,7 @@ jobs:
       github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ----------------------------------------------------------
       # Step 1: Gemini API接続テスト
